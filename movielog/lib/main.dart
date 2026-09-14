@@ -51,6 +51,7 @@ class StartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -75,20 +76,25 @@ class StartScreen extends StatelessWidget {
               '보고 싶은 영화부터 나만의 평점까지\n 한곳에서 관리해요',
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 80),
-            ElevatedButton(
-              onPressed: () {
-                debugPrint('시작하기 버튼을 눌렀습니다.');
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                backgroundColor: Colors.deepPurple,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            const SizedBox(height: 396),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ElevatedButton(
+                onPressed: () {
+                  debugPrint('시작하기 버튼을 눌렀습니다.');
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 56),
+                  backgroundColor: Colors.deepPurple,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  '시작하기',
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
-              child: const Text('시작하기', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
