@@ -14,8 +14,8 @@ class MovieLogApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: AppTheme.light,
-    // home: const StartScreen(),
-    home: const Profile(),
+    home: const StartScreen(),
+    // home: const Profile(),
   );
 }
 

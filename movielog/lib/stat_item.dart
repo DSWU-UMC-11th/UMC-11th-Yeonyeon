@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:movielog/theme/app_colors.dart';
+import 'package:movielog/theme/app_text_styles.dart';
 
 class StatItem extends StatelessWidget {
   const StatItem({super.key, required this.label, required this.value});
@@ -17,29 +18,18 @@ class StatItem extends StatelessWidget {
       width: 114,
       height: 86,
       decoration: BoxDecoration(
-        color: Color(0xFFF5F3F0),
-        border: Border.all(color: Color(0xFFE9DDFF)),
+        color: AppColors.cardBackground,
+        border: Border.all(color: AppColors.lavender),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: const Color(0xFF494551),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(label, style: AppTextStyles.statLabel),
           const SizedBox(height: 2),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 22,
-              color: colors.primary,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTextStyles.statValue.copyWith(color: colors.primary),
           ),
           const SizedBox(width: 4),
         ],

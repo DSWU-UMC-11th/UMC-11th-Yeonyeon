@@ -8,12 +8,12 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w700,
     color: AppColors.black,
   );
-  static final titleMedium = TextStyle(
+  static const titleMedium = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
     color: AppColors.black,
   );
-  static final bodyMedium = TextStyle(
+  static const bodyMedium = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: AppColors.black,
@@ -24,4 +24,25 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w400,
     color: AppColors.gray,
   );
+  static const profileName = TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.w500,
+    color: AppColors.black,
+  );
+
+  static const profileBio = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: AppColors.black,
+  );
+
+  static const chipLabel = TextStyle(fontSize: 14, color: AppColors.deepViolet);
+
+  static const statLabel = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.statLabelGray,
+  );
+
+  static const statValue = TextStyle(fontSize: 22, fontWeight: FontWeight.w700);
 }
