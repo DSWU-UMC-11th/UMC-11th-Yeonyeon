@@ -27,7 +27,11 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         title,
         style:
             titleStyle ??
-            AppTextStyles.titleLarge.copyWith(color: AppColors.violet),
+            AppTextStyles.titleLarge.copyWith(
+              color: AppColors.violet,
+              fontWeight: FontWeight.w500,
+              fontSize: 22,
+            ),
       ),
       centerTitle: centerTitle,
       leading: onBack == null
