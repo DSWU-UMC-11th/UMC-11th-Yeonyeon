@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'theme/app_colors.dart';
-import 'theme/app_text_styles.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class GenreChip extends StatelessWidget {
   const GenreChip({super.key, required this.label});
