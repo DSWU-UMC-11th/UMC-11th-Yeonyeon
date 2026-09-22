@@ -1,10 +1,12 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
+import 'package:movielog/signup/signup_screen.dart';
+import 'package:movielog/signup/agree_checkbox.dart';
 
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_text_styles.dart';
-import 'profile.dart';
+import 'profile/profile.dart';
 
 void main() => runApp(const MovieLogApp());
 
@@ -14,8 +16,9 @@ class MovieLogApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: AppTheme.light,
-    home: const StartScreen(),
+    // home: const StartScreen(),
     // home: const Profile(),
+    home: const SignUpScreen(),
   );
 }
 
