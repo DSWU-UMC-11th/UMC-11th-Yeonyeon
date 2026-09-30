@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../app_bar.dart';
 import './text_field.dart';
@@ -77,24 +78,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     FocusScope.of(context).unfocus();
 
+    context.go('/home');
+  }
+
+  void _showLoginNotice() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${_nicknameController.text.trim()}님, 가입이 완료되었습니다!'),
-      ),
+      const SnackBar(content: Text('로그인 화면은 아직 준비되지 않았습니다.')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAF8F6),
-      appBar: CommonAppBar(
-        title: '회원가입',
-        centerTitle: true,
-        onBack: () => Navigator.of(context).maybePop(),
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAF8F6),
+        appBar: const CommonAppBar(
+          title: '회원가입',
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+        ),
+        body: SafeArea(
+          child: LayoutBuilder(
           builder: (context, constraints) {
             // 넓은 화면에서 Form이 과도하게 늘어나지 않도록 최대 너비만 제한
             final maxFormWidth = constraints.maxWidth >= 700
@@ -167,7 +172,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           SignUpFooter(
                             canSubmit: _canSubmit,
                             onSubmit: _onSubmit,
-                            onLoginTap: () => Navigator.of(context).maybePop(),
+                            onLoginTap: _showLoginNotice,
                           ),
                         ],
                       ),
@@ -177,6 +182,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             );
           },
+          ),
         ),
       ),
     );

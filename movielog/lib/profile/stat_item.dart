@@ -18,7 +18,7 @@ class StatItem extends StatelessWidget {
       width: 114,
       height: 86,
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: AppColors.lavender,
         border: Border.all(color: AppColors.lavender),
         borderRadius: BorderRadius.circular(12),
       ),

@@ -1,24 +1,23 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
-import 'package:movielog/signup/signup_screen.dart';
-import 'package:movielog/signup/agree_checkbox.dart';
+import 'package:movielog/router/app_router.dart';
+import 'package:go_router/go_router.dart';
 
 import 'theme/app_theme.dart';
-import 'theme/app_colors.dart';
-import 'theme/app_text_styles.dart';
-import 'profile/profile.dart';
 
 void main() => runApp(const MovieLogApp());
 
 class MovieLogApp extends StatelessWidget {
   const MovieLogApp({super.key});
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) => MaterialApp.router(
     debugShowCheckedModeBanner: false,
     theme: AppTheme.light,
-    // home: const StartScreen(),
-    // home: const Profile(),
-    home: const SignUpScreen(),
+    routerConfig: AppRouter.router,
+    scrollBehavior: const MaterialScrollBehavior().copyWith(
+      physics: const ClampingScrollPhysics(),
+      overscroll: false,
+    ),
   );
 }
 
@@ -65,7 +64,8 @@ class StartScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {}, // 1주차에는 화면 이동을 연결하지 않습니다.
+                  onPressed: () =>
+                      context.go('/register'), // 1주차에는 화면 이동을 연결하지 않습니다.
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(0, 48),
                     backgroundColor: colors.primary,
