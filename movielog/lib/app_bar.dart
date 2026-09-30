@@ -1,6 +1,5 @@
 import 'theme/app_colors.dart';
 import 'theme/app_text_styles.dart';
-import 'theme/app_theme.dart';
 
 import 'package:flutter/material.dart';
 
@@ -12,6 +11,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.centerTitle = false,
     this.titleStyle,
+    this.automaticallyImplyLeading = true,
   });
 
   final String title;
@@ -19,6 +19,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final TextStyle? titleStyle;
   final bool centerTitle;
+  final bool automaticallyImplyLeading;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +35,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
       ),
       centerTitle: centerTitle,
+      automaticallyImplyLeading: automaticallyImplyLeading,
       leading: onBack == null
           ? null
           : IconButton(icon: const Icon(Icons.arrow_back), onPressed: onBack),
