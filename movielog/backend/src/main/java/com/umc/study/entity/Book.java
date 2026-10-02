@@ -1,7 +1,9 @@
 
 package com.umc.study.entity;
 import jakarta.persistence.*;
-import jdk.jfr.Category;
+
+import com.umc.study.entity.Category;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
