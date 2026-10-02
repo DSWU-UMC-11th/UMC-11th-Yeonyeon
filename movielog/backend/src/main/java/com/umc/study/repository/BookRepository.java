@@ -1,3 +1,4 @@
+
 //package com.umc.study.repository;
 //import lombok.RequiredArgsConstructor;
 //import org.springframework.jdbc.core.JdbcTemplate;
@@ -49,6 +50,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     List<Book> findAllByOrderByBookIdDesc();
 
-    // 기존 GET /books/category/{categoryId}를 ORM으로 옮긴 것 (선택)
+    // 기존 GET /books/category/{categoryId}를 ORM으로 옮긴 것
     List<Book> findByCategory_CategoryIdOrderByBookIdDesc(Long categoryId);
 }

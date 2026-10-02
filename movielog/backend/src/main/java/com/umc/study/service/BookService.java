@@ -1,3 +1,4 @@
+
 //// src/main/java/.../service/BookService.java
 //package com.umc.study.service;
 //
@@ -68,5 +69,6 @@ public class BookService {
 
         Book book = new Book(category, request.title(), request.description());
         return BookResponse.from(bookRepository.save(book));
+
     }
 }

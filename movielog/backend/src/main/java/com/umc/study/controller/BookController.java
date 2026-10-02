@@ -1,4 +1,5 @@
 // src/main/java/.../controller/BookController.java
+
 //package com.umc.study.controller;
 //import org.springframework.web.bind.annotation.PathVariable;
 //import com.umc.study.service.BookService;
@@ -64,4 +65,5 @@ public class BookController {
     public BookResponse createBook(@Valid @RequestBody CreateBookRequest request) {
         return bookService.createBook(request);
     }
+
 }
