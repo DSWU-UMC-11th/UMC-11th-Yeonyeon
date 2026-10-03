@@ -6,6 +6,7 @@ import 'package:movielog/MainScreen.dart';
 import 'package:movielog/home_screen.dart';
 import 'package:movielog/movie_list_screen.dart';
 import 'package:movielog/movie_detail_screen.dart';
+import 'package:movielog/fake_movie_service.dart';
 
 class AppRouter {
   AppRouter._();
