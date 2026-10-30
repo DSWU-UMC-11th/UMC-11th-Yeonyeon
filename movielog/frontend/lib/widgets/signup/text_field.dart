@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 
 /// 라벨 + 입력창을 한 덩어리로 묶은 재사용 위젯.
 /// 디자인상 라벨이 InputDecoration의 labelText가 아니라
@@ -95,7 +95,7 @@ class LabeledTextField extends StatelessWidget {
                 ? null
                 : Icon(
                     hasError ? Icons.error_outline : Icons.check_circle,
-                    color: hasError ? _errorColor : AppColors.violet,
+                    color: isValid ? AppColors.violet : _errorColor,
                   ),
             enabledBorder: _border(_borderColor),
             focusedBorder: _border(AppColors.violet, width: 2),

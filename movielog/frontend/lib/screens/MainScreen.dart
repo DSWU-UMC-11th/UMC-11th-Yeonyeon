@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-
-
 class MainScreen extends StatelessWidget {
   const MainScreen({
     super.key,
@@ -57,3 +55,4 @@ class MainScreen extends StatelessWidget {
     );
   }
 }
+// ignore_for_file: file_names

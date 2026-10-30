@@ -1,12 +1,15 @@
-import 'package:movielog/profile/profile.dart';
-import 'package:movielog/signup/signup_screen.dart';
-import 'package:movielog/main.dart';
+import 'package:movielog/widgets/profile/profile.dart';
+import 'package:movielog/screens/signup_screen.dart';
+import 'package:movielog/screens/start_screen.dart';
 import 'package:go_router/go_router.dart';
-import 'package:movielog/MainScreen.dart';
-import 'package:movielog/home_screen.dart';
-import 'package:movielog/movie_list_screen.dart';
-import 'package:movielog/movie_detail_screen.dart';
-import 'package:movielog/fake_movie_service.dart';
+import 'package:movielog/screens/MainScreen.dart';
+import 'package:movielog/screens/home_screen.dart';
+import 'package:movielog/screens/movie_list_screen.dart';
+import 'package:movielog/screens/movie_detail_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:movielog/data/services/tmdb_movie_service.dart';
+import 'package:movielog/view_models/movie_home_view_model.dart';
+import 'package:movielog/view_models/movie_list_view_model.dart';
 
 class AppRouter {
   AppRouter._();
@@ -35,11 +38,21 @@ class AppRouter {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (context, state) => const HomeScreen(),
+            builder: (context, state) => ChangeNotifierProvider(
+              create: (context) =>
+                  MovieHomeViewModel(context.read<TmdbMovieService>())
+                    ..loadPopular(),
+              child: const HomeScreen(),
+            ),
           ),
           GoRoute(
             path: '/movies',
-            builder: (context, state) => const MovieListScreen(),
+            builder: (context, state) => ChangeNotifierProvider(
+              create: (context) =>
+                  MovieListViewModel(context.read<TmdbMovieService>())
+                    ..loadInitial(),
+              child: const MovieListScreen(),
+            ),
           ),
           GoRoute(path: '/my', builder: (context, state) => const Profile()),
         ],

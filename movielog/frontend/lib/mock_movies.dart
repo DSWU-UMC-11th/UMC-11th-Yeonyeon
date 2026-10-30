@@ -1,4 +1,4 @@
-import './movie.dart';
+import 'models/movie.dart';
 
 /// 홈 · 목록 · 상세 화면이 모두 동일한 Mock Data를 참조합니다.
 const List<Movie> movies = [

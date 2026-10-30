@@ -1,5 +1,5 @@
-import 'mock_movies.dart';
-import 'movie.dart';
+import '../../mock_movies.dart';
+import '../../models/movie.dart';
 
 enum MovieLoadMode { success, empty, failure }
 

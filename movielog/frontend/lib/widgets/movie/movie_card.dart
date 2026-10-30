@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import './mock_movies.dart';
-import './movie.dart';
+import '../../models/movie.dart';
 
 /// 홈 · 목록 화면에서 공통으로 사용하는 영화 카드.
 /// GestureDetector의 onTap에서 Path Parameter로 상세 Route로 이동합니다.

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 
 class SignUpFooter extends StatelessWidget {
   const SignUpFooter({
@@ -28,7 +28,7 @@ class SignUpFooter extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.violet,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: AppColors.violet.withOpacity(0.35),
+              disabledBackgroundColor: AppColors.violet.withValues(alpha: 0.35),
               disabledForegroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(

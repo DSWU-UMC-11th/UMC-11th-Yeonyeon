@@ -1,10 +1,9 @@
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 
 import 'profile_header.dart';
 import 'genre_chip.dart';
 import 'stat_item.dart';
-import '../app_bar.dart';
+import '../../app_bar.dart';
 
 class Profile extends StatelessWidget {
   const Profile({super.key});

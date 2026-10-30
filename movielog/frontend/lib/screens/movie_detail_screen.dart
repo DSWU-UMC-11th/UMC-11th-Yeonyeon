@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:go_router/go_router.dart';
 
-import './mock_movies.dart';
-import './movie.dart';
-import './rating_dialog.dart';
+import '../mock_movies.dart';
+import '../models/movie.dart';
+import '../widgets/movie/rating_dialog.dart';
 
 class MovieDetailScreen extends StatefulWidget {
   const MovieDetailScreen({super.key, required this.movieId});
@@ -205,9 +205,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (var index = 0;
-                            index < synopsisParagraphs.length;
-                            index++) ...[
+                        for (
+                          var index = 0;
+                          index < synopsisParagraphs.length;
+                          index++
+                        ) ...[
                           if (index > 0) const SizedBox(height: 26),
                           Text(
                             synopsisParagraphs[index].trim(),
