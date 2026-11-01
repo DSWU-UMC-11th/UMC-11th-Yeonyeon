@@ -1,0 +1,322 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../app_bar.dart';
+import '../widgets/signup/text_field.dart';
+import '../widgets/signup/signup_footer.dart';
+import '../widgets/signup/signup_header.dart';
+import '../widgets/signup/agree_checkbox.dart';
+import '../view_models/signup_view_model.dart';
+import '../widgets/movielog_button.dart';
+
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Controller / FocusNode는 build가 아니라 State에서 생성한다.
+  //입력창 설정
+  final _nicknameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  //focus할 때를 정의
+  final _nicknameFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+
+  bool _agreedToTerms = false;
+
+  @override
+  void dispose() {
+    _nicknameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nicknameFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
+  // ---------- Validators ----------
+  String? _validateNickname(String? value) {
+    final nickname = value?.trim() ?? '';
+    if (nickname.isEmpty) return '닉네임을 입력해주세요.';
+    if (nickname.length < 2) return '닉네임은 2자 이상이어야 합니다.';
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) return '이메일을 입력해주세요.';
+    final regExp = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
+    if (!regExp.hasMatch(email)) return '올바른 이메일 형식이 아닙니다.';
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    final password = value ?? '';
+    if (password.isEmpty) return '비밀번호를 입력해주세요.';
+    if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
+    return null;
+  }
+
+  // ---------- 버튼 활성화 조건 ----------
+  bool get _canSubmit =>
+      _validateNickname(_nicknameController.text) == null &&
+      _validateEmail(_emailController.text) == null &&
+      _validatePassword(_passwordController.text) == null &&
+      context.read<SignUpViewModel>().nicknameCheckStatus ==
+          CheckStatus.available &&
+      context.read<SignUpViewModel>().emailCheckStatus ==
+          CheckStatus.available &&
+      _agreedToTerms;
+
+  void _onSubmit() {
+    // 버튼 활성화 조건과 별개로 제출 시 Form 전체를 다시 검증한다.
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
+    FocusScope.of(context).unfocus();
+
+    context.go('/home');
+  }
+
+  void _showLoginNotice() {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('로그인 화면은 아직 준비되지 않았습니다.')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAF8F6),
+        appBar: CommonAppBar(
+          title: '회원가입',
+          centerTitle: true,
+          onBack: () => context.go('/start'),
+        ),
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // 넓은 화면에서 Form이 과도하게 늘어나지 않도록 최대 너비만 제한
+              final maxFormWidth = constraints.maxWidth >= 700
+                  ? 560.0
+                  : double.infinity;
+
+              return Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxFormWidth),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(18, 26, 18, 0),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: ConstrainedBox(
+                      // 화면이 남으면 아래 영역을 밀어내고,
+                      // 키보드가 올라오면 스크롤되어 Overflow가 나지 않는다.
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 40,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Consumer<SignUpViewModel>(
+                          builder: (context, viewModel, _) => Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const SignUpHeader(),
+                                const SizedBox(height: 28),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: LabeledTextField(
+                                        label: '닉네임',
+                                        hintText: '닉네임을 입력해주세요',
+                                        controller: _nicknameController,
+                                        focusNode: _nicknameFocusNode,
+                                        nextFocusNode: _emailFocusNode,
+                                        validator: _validateNickname,
+                                        errorText: viewModel.nicknameErrorText,
+                                        showStateIcon:
+                                            viewModel.nicknameCheckStatus !=
+                                            CheckStatus.checking,
+                                        onChanged: (value) {
+                                          viewModel.onNicknameChanged(value);
+                                          setState(() {});
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 30),
+                                      child: MovieLogButton(
+                                        label: '중복 확인',
+                                        width: 102,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        labelStyle: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                        isLoading:
+                                            viewModel.nicknameCheckStatus ==
+                                            CheckStatus.checking,
+                                        onPressed: viewModel.canCheckNickname
+                                            ? () => viewModel.checkNickname(
+                                                _nicknameController.text,
+                                              )
+                                            : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (viewModel.nicknameCheckStatus ==
+                                    CheckStatus.available)
+                                  const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '사용할 수 있는 닉네임입니다.',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                if (viewModel.nicknameCheckStatus ==
+                                    CheckStatus.checking)
+                                  const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '닉네임 사용 가능 여부를 확인 중입니다.',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: LabeledTextField(
+                                        label: '이메일',
+                                        hintText: '이메일 주소를 입력해주세요',
+                                        controller: _emailController,
+                                        focusNode: _emailFocusNode,
+                                        nextFocusNode: _passwordFocusNode,
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        validator: _validateEmail,
+                                        errorText: viewModel.emailErrorText,
+                                        showStateIcon:
+                                            viewModel.emailCheckStatus !=
+                                            CheckStatus.checking,
+                                        onChanged: (value) {
+                                          viewModel.onEmailChanged(value);
+                                          setState(() {});
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 30),
+                                      child: MovieLogButton(
+                                        label: '중복 확인',
+                                        width: 102,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        labelStyle: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                        isLoading:
+                                            viewModel.emailCheckStatus ==
+                                            CheckStatus.checking,
+                                        onPressed: viewModel.canCheckEmail
+                                            ? () => viewModel.checkEmail(
+                                                _emailController.text,
+                                              )
+                                            : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (viewModel.emailCheckStatus ==
+                                    CheckStatus.available)
+                                  const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '사용할 수 있는 이메일입니다.',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                if (viewModel.emailCheckStatus ==
+                                    CheckStatus.checking)
+                                  const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '이메일 사용 가능 여부를 확인 중입니다.',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 16),
+                                LabeledTextField(
+                                  label: '비밀번호',
+                                  hintText: '비밀번호를 입력해주세요',
+                                  controller: _passwordController,
+                                  focusNode: _passwordFocusNode,
+                                  obscureText: true,
+                                  textInputAction: TextInputAction.done,
+                                  validator: _validatePassword,
+                                  onChanged: (_) => setState(() {}),
+                                  onSubmitted: () {
+                                    FocusScope.of(context).unfocus();
+                                    if (_canSubmit) _onSubmit();
+                                  },
+                                ),
+                                const Spacer(),
+                                TermsAgreementCheckbox(
+                                  value: _agreedToTerms,
+                                  onChanged: (v) =>
+                                      setState(() => _agreedToTerms = v),
+                                ),
+                                const SizedBox(height: 24),
+                                SignUpFooter(
+                                  canSubmit: _canSubmit,
+                                  onSubmit: _onSubmit,
+                                  onLoginTap: _showLoginNotice,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
