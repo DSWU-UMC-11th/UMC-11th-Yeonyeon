@@ -1,14 +1,20 @@
 package com.umc.backend.controller;
 
 import com.umc.backend.dto.RatingResponse;
+import com.umc.backend.dto.ApiResponse;
+import com.umc.backend.dto.CreateRatingRequest;
+import com.umc.backend.dto.UpdateRatingRequest;
 import com.umc.backend.service.RatingService;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -17,26 +23,35 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/members")
 public class RatingController {
-
     private final RatingService ratingService;
 
-    /**
-     * GET /members/{memberId}/ratings
-     * - page, size 가 없으면 전체 목록(필수 미션)
-     * - GET /members/{memberId}/ratings?page=0&size=10 처럼 주면 페이지 단위(선택 미션)
-     */
     @GetMapping("/{memberId}/ratings")
-    public List<RatingResponse> getMemberRatings(
-            @PathVariable Long memberId,
-            @RequestParam(required = false) @Min(0) Integer page,
-            @RequestParam(required = false) @Min(1) @Max(100) Integer size) {
+    public ApiResponse<List<RatingResponse>> getMemberRatings(@PathVariable Long memberId) {
+        return ApiResponse.ok("평점 조회에 성공했습니다.", ratingService.getRatingsByMember(memberId));
+    }
 
-        if (page == null && size == null) {
-            return ratingService.getRatingsByMember(memberId);
-        }
-        return ratingService.getRatingsByMember(
-                memberId,
-                page == null ? 0 : page,
-                size == null ? 10 : size);
+    @PostMapping("/{memberId}/ratings")
+    public ResponseEntity<ApiResponse<Long>> create(
+            @PathVariable Long memberId,
+            @Valid @RequestBody CreateRatingRequest request
+    ) {
+        Long ratingId = ratingService.create(memberId, request);
+        return ResponseEntity.status(201).body(ApiResponse.created("평점 등록에 성공했습니다.", ratingId));
+    }
+
+    @PatchMapping("/{memberId}/ratings/{ratingId}")
+    public ResponseEntity<ApiResponse<Void>> update(
+            @PathVariable Long memberId,
+            @PathVariable Long ratingId,
+            @Valid @RequestBody UpdateRatingRequest request
+    ) {
+        ratingService.update(ratingId, memberId, request);
+        return ResponseEntity.ok(ApiResponse.ok("평점 수정에 성공했습니다.", null));
+    }
+
+    @DeleteMapping("/{memberId}/ratings/{ratingId}")
+    public ResponseEntity<Void> delete(@PathVariable Long memberId, @PathVariable Long ratingId) {
+        ratingService.delete(ratingId, memberId);
+        return ResponseEntity.noContent().build();
     }
 }

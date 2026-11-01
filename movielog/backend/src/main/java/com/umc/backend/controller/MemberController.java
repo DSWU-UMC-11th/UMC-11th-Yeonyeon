@@ -1,31 +1,44 @@
+// src/main/java/com/umc/movie/controller/MemberController.java
 package com.umc.backend.controller;
 
+import com.umc.backend.dto.ApiResponse;
 import com.umc.backend.dto.EmailCheckResponse;
+import com.umc.backend.dto.MemberResponse;
 import com.umc.backend.dto.NicknameCheckResponse;
+import com.umc.backend.dto.SignUpRequest;
 import com.umc.backend.service.MemberService;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/members")
 public class MemberController {
-
     private final MemberService memberService;
 
-    // 선택 미션: 닉네임 2~12자 검증. 위반 시 available 판단 전에 400 응답
     @GetMapping("/nickname/{nickname}")
-    public NicknameCheckResponse checkNickname(
-            @PathVariable @Size(min = 2, max = 12, message = "닉네임은 2~12자여야 합니다.") String nickname) {
+    public NicknameCheckResponse checkNickname(@PathVariable String nickname) {
         return memberService.checkNickname(nickname);
     }
 
-    // 선택 미션: 이메일 형식 검증. 위반 시 400 응답
     @GetMapping("/email/{email}")
-    public EmailCheckResponse checkEmail(
-            @PathVariable @Email(message = "이메일 형식이 올바르지 않습니다.") String email) {
+    public EmailCheckResponse checkEmail(@PathVariable String email) {
         return memberService.checkEmail(email);
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<MemberResponse>> signUp(
+            @Valid @RequestBody SignUpRequest request
+    ) {
+        MemberResponse response = memberService.signUp(request);
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created("회원가입에 성공했습니다.", response));
     }
 }

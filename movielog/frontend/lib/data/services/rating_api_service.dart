@@ -8,7 +8,12 @@ class RatingApiService {
 
   Future<List<RatingDto>> fetchMyRatings(int memberId) async {
     final response = await _dio.get('/v5/members/$memberId/ratings');
-    final list = response.data as List<dynamic>;
+    // The API envelope is used by the Spring backend; accepting a bare list
+    // also keeps this client compatible with the existing workbook endpoint.
+    final payload = response.data;
+    final list = payload is Map<String, dynamic>
+        ? payload['result'] as List<dynamic>
+        : payload as List<dynamic>;
     return list
         .map((item) => RatingDto.fromJson(item as Map<String, dynamic>))
         .toList();

@@ -14,4 +14,5 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
 
     // 선택 미션: 페이지네이션 (정렬은 Pageable의 Sort로 지정)
     Page<Rating> findByMember_MemberId(Long memberId, Pageable pageable);
+    boolean existsByMember_MemberIdAndMovieId(Long memberId, Long movieId);
 }
