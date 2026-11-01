@@ -18,8 +18,8 @@ class TermsAgreementCheckbox extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 24,
-          height: 24,
+          width: 26,
+          height: 26,
           child: Checkbox(
             value: value,
             onChanged: (v) => onChanged(v ?? false),
@@ -30,7 +30,7 @@ class TermsAgreementCheckbox extends StatelessWidget {
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         // 긴 문구가 들어와도 overflow 되지 않도록 Flexible 사용
         Flexible(
           child: GestureDetector(

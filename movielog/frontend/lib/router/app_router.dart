@@ -1,5 +1,5 @@
-import 'package:movielog/widgets/profile/profile.dart';
-import 'package:movielog/screens/signup_screen.dart';
+import 'package:movielog/screens/my_page_screen.dart';
+import 'package:movielog/screens/register_screen.dart';
 import 'package:movielog/screens/start_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movielog/screens/MainScreen.dart';
@@ -10,17 +10,30 @@ import 'package:provider/provider.dart';
 import 'package:movielog/data/services/tmdb_movie_service.dart';
 import 'package:movielog/view_models/movie_home_view_model.dart';
 import 'package:movielog/view_models/movie_list_view_model.dart';
+import 'package:flutter/material.dart';
+import 'package:movielog/data/services/member_check_service.dart';
+import 'package:movielog/data/services/rating_api_service.dart';
+import 'package:movielog/view_models/signup_view_model.dart';
+import 'package:movielog/view_models/my_ratings_view_model.dart';
+import 'package:movielog/screens/my_ratings_screen.dart';
 
 class AppRouter {
   AppRouter._();
 
+  static final rootNavigatorKey = GlobalKey<NavigatorState>();
+
   static final router = GoRouter(
     initialLocation: '/start',
+    navigatorKey: rootNavigatorKey,
     routes: [
       GoRoute(path: '/start', builder: (context, state) => const StartScreen()),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const SignUpScreen(),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (context) =>
+              SignUpViewModel(context.read<MemberCheckService>()),
+          child: const SignUpScreen(),
+        ),
       ),
       GoRoute(
         path: '/movies/:movieId',
@@ -54,7 +67,24 @@ class AppRouter {
               child: const MovieListScreen(),
             ),
           ),
-          GoRoute(path: '/my', builder: (context, state) => const Profile()),
+          GoRoute(
+            path: '/my',
+            builder: (context, state) => const Profile(),
+            routes: [
+              GoRoute(
+                path: 'ratings',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) => ChangeNotifierProvider(
+                  create: (context) => MyRatingsViewModel(
+                    context.read<RatingApiService>(),
+                    context.read<TmdbMovieService>(),
+                    sampleMemberId,
+                  )..load(),
+                  child: const MyRatingsScreen(),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     ],

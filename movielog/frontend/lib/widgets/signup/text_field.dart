@@ -15,6 +15,7 @@ class LabeledTextField extends StatelessWidget {
     this.focusNode,
     this.nextFocusNode,
     this.validator,
+    this.errorText,
     this.keyboardType,
     this.textInputAction = TextInputAction.next,
     this.obscureText = false,
@@ -29,6 +30,7 @@ class LabeledTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final FocusNode? nextFocusNode;
   final String? Function(String?)? validator;
+  final String? errorText;
   final TextInputType? keyboardType;
   final TextInputAction textInputAction;
   final bool obscureText;
@@ -52,9 +54,12 @@ class LabeledTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     // 현재 입력값 기준으로 에러/정상 상태를 계산해 아이콘·배경색에 반영
     final text = controller.text;
-    final errorText = validator?.call(text);
-    final hasError = text.isNotEmpty && errorText != null;
-    final isValid = text.isNotEmpty && errorText == null;
+    final validationError = validator?.call(text);
+    final serverErrorText = errorText;
+    final hasError =
+        (text.isNotEmpty && validationError != null) || serverErrorText != null;
+    final isValid =
+        text.isNotEmpty && validationError == null && serverErrorText == null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,10 +75,12 @@ class LabeledTextField extends StatelessWidget {
         TextFormField(
           controller: controller,
           focusNode: focusNode,
+          style: AppTextStyles.bodyMedium.copyWith(fontSize: 14, height: 1.4),
           keyboardType: keyboardType,
           textInputAction: textInputAction,
           obscureText: obscureText,
           validator: validator,
+          forceErrorText: serverErrorText,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           onChanged: onChanged,
           onFieldSubmitted: (_) {
@@ -85,11 +92,12 @@ class LabeledTextField extends StatelessWidget {
           },
           decoration: InputDecoration(
             hintText: hintText,
+            isDense: true,
             filled: true,
             fillColor: hasError ? _errorFill : _normalFill,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
-              vertical: 16,
+              vertical: 14,
             ),
             suffixIcon: !showStateIcon || text.isEmpty
                 ? null

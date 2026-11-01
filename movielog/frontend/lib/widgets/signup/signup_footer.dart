@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../movielog_button.dart';
 
 class SignUpFooter extends StatelessWidget {
   const SignUpFooter({
@@ -19,33 +20,13 @@ class SignUpFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(
+        MovieLogButton(
+          label: '가입하기',
           width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            // onPressed가 null이면 버튼이 비활성화된다.
-            onPressed: canSubmit ? onSubmit : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.violet,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: AppColors.violet.withValues(alpha: 0.35),
-              disabledForegroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              '가입하기',
-              style: AppTextStyles.titleLarge.copyWith(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ),
+          disabledBackgroundColor: const Color(0xFFD8C8E8),
+          onPressed: canSubmit ? onSubmit : null,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 60),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
