@@ -17,7 +17,7 @@ class TmdbMovieCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GestureDetector(
     behavior: HitTestBehavior.opaque,
-    onTap: () => context.push('/movies/${movie.id}'),
+    onTap: () => context.push('/movies/${movie.id}', extra: movie),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
