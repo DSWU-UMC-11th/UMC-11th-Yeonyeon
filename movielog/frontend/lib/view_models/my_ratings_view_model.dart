@@ -6,8 +6,6 @@ import '../data/models/tmdb_movie_dto.dart';
 import '../data/services/rating_api_service.dart';
 import '../data/services/tmdb_movie_service.dart';
 
-const int sampleMemberId = 1;
-
 enum MyRatingsLoadStatus { idle, loading, success, empty, error }
 
 class MyRatingsViewModel extends ChangeNotifier {
@@ -22,6 +20,76 @@ class MyRatingsViewModel extends ChangeNotifier {
   List<RatingWithMovie> ratings = const [];
   MyRatingsLoadStatus status = MyRatingsLoadStatus.idle;
   String? message;
+  bool editing = false;
+  bool isDeletingSelected = false;
+  final Set<int> selectedRatingIds = {};
+  String? refreshWarning;
+
+  void toggleEditing() { editing = !editing; selectedRatingIds.clear(); notifyListeners(); }
+  void cancelEditing() { editing = false; selectedRatingIds.clear(); notifyListeners(); }
+  void toggleSelected(int id) { if (!selectedRatingIds.add(id)) selectedRatingIds.remove(id); notifyListeners(); }
+
+  Future<void> _refreshAfterWrite() async {
+    await load();
+    if (status == MyRatingsLoadStatus.error) {
+      refreshWarning = '저장은 완료됐지만 목록을 불러오지 못했습니다. 조회만 다시 시도해 주세요.';
+    } else {
+      refreshWarning = null;
+    }
+    notifyListeners();
+  }
+
+  Future<void> updateRating({required int ratingId, required int score, String? comment}) async {
+    try {
+      await _service.updateRating(memberId: memberId, ratingId: ratingId, score: score, comment: comment);
+    } on DioException catch (error) {
+      message = writeErrorMessage(error);
+      notifyListeners();
+      if (shouldRefreshAfterRatingError(error)) await load();
+      rethrow;
+    }
+    await _refreshAfterWrite();
+  }
+
+  Future<void> deleteRating(int ratingId) async {
+    try {
+      await _service.deleteRating(memberId: memberId, ratingId: ratingId);
+    } on DioException catch (error) {
+      message = writeErrorMessage(error);
+      notifyListeners();
+      if (shouldRefreshAfterRatingError(error)) await load();
+      rethrow;
+    }
+    await _refreshAfterWrite();
+  }
+
+  Future<void> deleteSelectedRatings() async {
+    if (isDeletingSelected || selectedRatingIds.isEmpty) return;
+    isDeletingSelected = true; message = null; notifyListeners();
+    var failed = 0;
+    try {
+      for (final id in selectedRatingIds.toList()) {
+        try {
+          await _service.deleteRating(memberId: memberId, ratingId: id);
+          selectedRatingIds.remove(id);
+        } on DioException catch (error) {
+          failed++;
+          message = writeErrorMessage(error);
+        }
+      }
+
+    } finally {
+      isDeletingSelected = false;
+      notifyListeners();
+    }
+    await _refreshAfterWrite();
+    if (failed > 0) {
+      message = '$failed개 항목을 삭제하지 못했습니다. 선택된 항목을 다시 확인해 주세요.';
+      notifyListeners();
+    } else {
+      cancelEditing();
+    }
+  }
 
   Future<void> load() async {
     final version = ++_requestVersion;
@@ -59,7 +127,7 @@ class MyRatingsViewModel extends ChangeNotifier {
     } on DioException catch (error) {
       if (_disposed || version != _requestVersion) return;
       status = MyRatingsLoadStatus.error;
-      message = writeMyRatingsErrorMessage(error);
+      message = writeErrorMessage(error);
     }
     if (!_disposed && version == _requestVersion) notifyListeners();
   }

@@ -9,6 +9,8 @@ import '../widgets/signup/signup_header.dart';
 import '../widgets/signup/agree_checkbox.dart';
 import '../view_models/signup_view_model.dart';
 import '../widgets/movielog_button.dart';
+import '../view_models/learning_member_session.dart';
+import '../data/models/sign_up_models.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -49,6 +51,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final nickname = value?.trim() ?? '';
     if (nickname.isEmpty) return '닉네임을 입력해주세요.';
     if (nickname.length < 2) return '닉네임은 2자 이상이어야 합니다.';
+    if (nickname.length > 12) return '닉네임은 12자 이하로 입력해주세요.';
     return null;
   }
 
@@ -63,7 +66,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _validatePassword(String? value) {
     final password = value ?? '';
     if (password.isEmpty) return '비밀번호를 입력해주세요.';
+    if (password.trim() != password) return '비밀번호 앞뒤에 공백을 입력할 수 없습니다.';
     if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
+    if (!RegExp(r'[a-z]').hasMatch(password) || !RegExp(r'[A-Z]').hasMatch(password) || !RegExp(r'\d').hasMatch(password) || !RegExp(r'[!@#$%^&*]').hasMatch(password)) return '대소문자·숫자·특수문자를 각각 포함해 주세요.';
     return null;
   }
 
@@ -72,20 +77,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _validateNickname(_nicknameController.text) == null &&
       _validateEmail(_emailController.text) == null &&
       _validatePassword(_passwordController.text) == null &&
-      context.read<SignUpViewModel>().nicknameCheckStatus ==
-          CheckStatus.available &&
-      context.read<SignUpViewModel>().emailCheckStatus ==
-          CheckStatus.available &&
+      context.read<SignUpViewModel>().canSubmit &&
       _agreedToTerms;
 
-  void _onSubmit() {
+  Future<void> _onSubmit() async {
     // 버튼 활성화 조건과 별개로 제출 시 Form 전체를 다시 검증한다.
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
     FocusScope.of(context).unfocus();
 
-    context.go('/home');
+    final vm = context.read<SignUpViewModel>();
+    await vm.submit(CreateMemberRequest(email: _emailController.text, password: _passwordController.text, nickname: _nicknameController.text));
+    if (!mounted) return;
+    if (vm.submitStatus == SubmitStatus.success && vm.createdMemberId != null) {
+      context.read<LearningMemberSession>().setMemberId(vm.createdMemberId!);
+      context.go('/movies');
+    } else if (vm.passwordErrorText != null) {
+      setState(() {});
+    } else if (vm.snackbarMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(vm.snackbarMessage!)));
+    }
   }
 
   void _showLoginNotice() {
@@ -96,13 +108,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: context.watch<SignUpViewModel>().submitStatus != SubmitStatus.submitting,
       child: Scaffold(
         backgroundColor: const Color(0xFFFAF8F6),
         appBar: CommonAppBar(
           title: '회원가입',
           centerTitle: true,
-          onBack: () => context.go('/start'),
+          onBack: () {
+            if (context.read<SignUpViewModel>().submitStatus != SubmitStatus.submitting) context.go('/start');
+          },
         ),
         body: SafeArea(
           child: LayoutBuilder(
@@ -286,7 +300,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   obscureText: true,
                                   textInputAction: TextInputAction.done,
                                   validator: _validatePassword,
-                                  onChanged: (_) => setState(() {}),
+                                        errorText: viewModel.passwordErrorText,
+                                  onChanged: (_) {
+                                    context.read<SignUpViewModel>().onPasswordChanged();
+                                    setState(() {});
+                                  },
                                   onSubmitted: () {
                                     FocusScope.of(context).unfocus();
                                     if (_canSubmit) _onSubmit();
@@ -300,7 +318,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 const SizedBox(height: 24),
                                 SignUpFooter(
-                                  canSubmit: _canSubmit,
+                                  canSubmit: _canSubmit && viewModel.submitStatus != SubmitStatus.submitting,
                                   onSubmit: _onSubmit,
                                   onLoginTap: _showLoginNotice,
                                 ),

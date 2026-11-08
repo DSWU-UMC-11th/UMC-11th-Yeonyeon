@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:movielog/data/models/rating_dto.dart';
 import 'package:movielog/data/models/tmdb_movie_dto.dart';
-import 'package:movielog/data/services/member_check_service.dart';
+import 'package:movielog/data/services/sign_up_service.dart';
 import 'package:movielog/data/services/rating_api_service.dart';
 import 'package:movielog/data/services/tmdb_movie_service.dart';
 import 'package:movielog/screens/my_ratings_screen.dart';
@@ -18,11 +18,11 @@ import 'package:provider/provider.dart';
 
 void main() {
   group('Guided Practice A: 중복 확인', () {
-    late _FakeMemberCheckService service;
+    late _FakeSignUpService service;
     late SignUpViewModel viewModel;
 
     setUp(() {
-      service = _FakeMemberCheckService();
+      service = _FakeSignUpService();
       viewModel = SignUpViewModel(service);
     });
 
@@ -182,7 +182,7 @@ void main() {
     setUp(() {
       ratings = _FakeRatingApiService();
       movies = _FakeTmdbMovieService();
-      viewModel = MyRatingsViewModel(ratings, movies, sampleMemberId);
+      viewModel = MyRatingsViewModel(ratings, movies, 1);
     });
 
     tearDown(() => viewModel.dispose());
@@ -335,8 +335,8 @@ RatingDto _rating(int id, int movieId, String? comment) => RatingDto(
   createdAt: DateTime.utc(2026, 10, 31),
 );
 
-class _FakeMemberCheckService extends MemberCheckService {
-  _FakeMemberCheckService() : super(Dio());
+class _FakeSignUpService extends SignUpService {
+  _FakeSignUpService() : super(Dio());
 
   Completer<bool>? nicknameCompleter;
   Completer<bool>? emailCompleter;
