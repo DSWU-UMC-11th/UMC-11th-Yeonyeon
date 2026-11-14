@@ -4,15 +4,18 @@ import 'package:flutter/foundation.dart';
 import '../data/models/rating_with_movie.dart';
 import '../data/models/tmdb_movie_dto.dart';
 import '../data/services/rating_api_service.dart';
+import '../data/services/auth_api_service.dart';
 import '../data/services/tmdb_movie_service.dart';
+import 'auth_view_model.dart';
 
 enum MyRatingsLoadStatus { idle, loading, success, empty, error }
 
 class MyRatingsViewModel extends ChangeNotifier {
-  MyRatingsViewModel(this._service, this._movieService, this.memberId);
+  MyRatingsViewModel(this._service, this._movieService, this.auth, this.memberId);
 
   final RatingApiService _service;
   final TmdbMovieService _movieService;
+  final AuthViewModel auth;
   final int memberId;
   final Map<int, TmdbMovieDto?> _movieCache = {};
   int _requestVersion = 0;
@@ -40,24 +43,34 @@ class MyRatingsViewModel extends ChangeNotifier {
   }
 
   Future<void> updateRating({required int ratingId, required int score, String? comment}) async {
+    final sessionVersion = auth.sessionVersion;
     try {
-      await _service.updateRating(memberId: memberId, ratingId: ratingId, score: score, comment: comment);
+      final updated = await _service.updateRating(ratingId: ratingId, score: score, comment: comment);
+      if (_disposed || sessionVersion != auth.sessionVersion) return;
+      ratings = ratings.map((entry) => entry.rating.ratingId == ratingId ? RatingWithMovie(rating: updated, movie: entry.movie) : entry).toList();
     } on DioException catch (error) {
+      if (_disposed || sessionVersion != auth.sessionVersion) return;
       message = writeErrorMessage(error);
       notifyListeners();
-      if (shouldRefreshAfterRatingError(error)) await load();
+      if (const {'AUTH401_2','AUTH401_3','AUTH401_4'}.contains(apiErrorCode(error))) await auth.expireSession();
+      else if (shouldRefreshAfterRatingError(error)) await load();
       rethrow;
     }
     await _refreshAfterWrite();
   }
 
   Future<void> deleteRating(int ratingId) async {
+    final sessionVersion = auth.sessionVersion;
     try {
-      await _service.deleteRating(memberId: memberId, ratingId: ratingId);
+      await _service.deleteRating(ratingId: ratingId);
+      if (_disposed || sessionVersion != auth.sessionVersion) return;
+      ratings = ratings.where((entry) => entry.rating.ratingId != ratingId).toList();
     } on DioException catch (error) {
+      if (_disposed || sessionVersion != auth.sessionVersion) return;
       message = writeErrorMessage(error);
       notifyListeners();
-      if (shouldRefreshAfterRatingError(error)) await load();
+      if (const {'AUTH401_2','AUTH401_3','AUTH401_4'}.contains(apiErrorCode(error))) await auth.expireSession();
+      else if (shouldRefreshAfterRatingError(error)) await load();
       rethrow;
     }
     await _refreshAfterWrite();
@@ -65,16 +78,24 @@ class MyRatingsViewModel extends ChangeNotifier {
 
   Future<void> deleteSelectedRatings() async {
     if (isDeletingSelected || selectedRatingIds.isEmpty) return;
+    final sessionVersion = auth.sessionVersion;
     isDeletingSelected = true; message = null; notifyListeners();
     var failed = 0;
     try {
       for (final id in selectedRatingIds.toList()) {
+        if (_disposed || sessionVersion != auth.sessionVersion) return;
         try {
-          await _service.deleteRating(memberId: memberId, ratingId: id);
+          await _service.deleteRating(ratingId: id);
+          if (_disposed || sessionVersion != auth.sessionVersion) return;
           selectedRatingIds.remove(id);
         } on DioException catch (error) {
+          if (_disposed || sessionVersion != auth.sessionVersion) return;
           failed++;
           message = writeErrorMessage(error);
+          if (const {'AUTH401_2','AUTH401_3','AUTH401_4'}.contains(apiErrorCode(error))) {
+            await auth.expireSession();
+            return;
+          }
         }
       }
 
@@ -93,17 +114,18 @@ class MyRatingsViewModel extends ChangeNotifier {
 
   Future<void> load() async {
     final version = ++_requestVersion;
+    final sessionVersion = auth.sessionVersion;
     status = MyRatingsLoadStatus.loading;
     message = null;
     notifyListeners();
     try {
       final rawRatings = await _service.fetchMyRatings(memberId);
-      if (_disposed || version != _requestVersion) return;
+      if (_disposed || version != _requestVersion || sessionVersion != auth.sessionVersion) return;
       final entries = <RatingWithMovie>[];
       final attemptedMovieLookups = <int>{};
       var missingMovies = 0;
       for (final rating in rawRatings) {
-        if (_disposed || version != _requestVersion) return;
+        if (_disposed || version != _requestVersion || sessionVersion != auth.sessionVersion) return;
         if (!_movieCache.containsKey(rating.movieId) &&
             attemptedMovieLookups.add(rating.movieId)) {
           try {
@@ -118,16 +140,17 @@ class MyRatingsViewModel extends ChangeNotifier {
         if (movie == null) missingMovies++;
         entries.add(RatingWithMovie(rating: rating, movie: movie));
       }
-      if (_disposed || version != _requestVersion) return;
+      if (_disposed || version != _requestVersion || sessionVersion != auth.sessionVersion) return;
       ratings = entries;
       status = entries.isEmpty
           ? MyRatingsLoadStatus.empty
           : MyRatingsLoadStatus.success;
       if (missingMovies > 0) message = '일부 영화 정보를 가져오지 못해 제목과 포스터를 대신 표시합니다.';
     } on DioException catch (error) {
-      if (_disposed || version != _requestVersion) return;
+      if (_disposed || version != _requestVersion || sessionVersion != auth.sessionVersion) return;
       status = MyRatingsLoadStatus.error;
       message = writeErrorMessage(error);
+      if (const {'AUTH401_2','AUTH401_3','AUTH401_4'}.contains(apiErrorCode(error))) await auth.expireSession();
     }
     if (!_disposed && version == _requestVersion) notifyListeners();
   }
