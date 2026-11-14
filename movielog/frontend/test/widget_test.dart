@@ -8,10 +8,14 @@ import 'package:movielog/data/models/tmdb_movie_dto.dart';
 import 'package:movielog/data/services/sign_up_service.dart';
 import 'package:movielog/data/services/rating_api_service.dart';
 import 'package:movielog/data/services/tmdb_movie_service.dart';
+import 'package:movielog/data/services/auth_api_service.dart';
+import 'package:movielog/data/services/token_storage.dart';
+import 'package:movielog/data/models/member_info.dart';
 import 'package:movielog/screens/my_ratings_screen.dart';
 import 'package:movielog/screens/movie_detail_screen.dart';
 import 'package:movielog/view_models/my_ratings_view_model.dart';
 import 'package:movielog/view_models/signup_view_model.dart';
+import 'package:movielog/view_models/auth_view_model.dart';
 import 'package:movielog/widgets/movielog_button.dart';
 import 'package:movielog/widgets/signup/text_field.dart';
 import 'package:provider/provider.dart';
@@ -177,15 +181,20 @@ void main() {
   group('Guided Practice B / Required Mission: 내 평점 조회', () {
     late _FakeRatingApiService ratings;
     late _FakeTmdbMovieService movies;
+    late _FakeAuthViewModel auth;
     late MyRatingsViewModel viewModel;
 
     setUp(() {
       ratings = _FakeRatingApiService();
       movies = _FakeTmdbMovieService();
-      viewModel = MyRatingsViewModel(ratings, movies, 1);
+      auth = _FakeAuthViewModel();
+      viewModel = MyRatingsViewModel(ratings, movies, auth, 1);
     });
 
-    tearDown(() => viewModel.dispose());
+    tearDown(() {
+      viewModel.dispose();
+      auth.dispose();
+    });
 
     test('요청 중 loading을 알리고 memberId 1의 목록과 영화 정보를 결합한다', () async {
       ratings.completer = Completer<List<RatingDto>>();
@@ -214,14 +223,14 @@ void main() {
       ratings.fail = true;
       await viewModel.load();
       expect(viewModel.status, MyRatingsLoadStatus.error);
-      expect(viewModel.message, contains('평점을 불러오지 못했습니다'));
+      expect(viewModel.message, '네트워크를 확인하고 다시 시도해 주세요.');
 
       ratings.failureStatusCode = 400;
       await viewModel.load();
-      expect(viewModel.message, 'memberId 형식을 다시 확인해 주세요.');
+      expect(viewModel.message, '평점 요청이 올바르지 않습니다.');
       ratings.failureStatusCode = 404;
       await viewModel.load();
-      expect(viewModel.message, '존재하지 않는 회원입니다.');
+      expect(viewModel.message, '해당 회원을 찾을 수 없습니다.');
     });
 
     testWidgets('화면에 loading, empty, error와 재시도 동작이 표시된다', (tester) async {
@@ -245,7 +254,7 @@ void main() {
       final failedLoad = viewModel.load();
       await failedLoad;
       await tester.pump();
-      expect(find.text('평점을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'), findsOneWidget);
+      expect(find.text('네트워크를 확인하고 다시 시도해 주세요.'), findsNWidgets(2));
       expect(find.text('다시 시도'), findsOneWidget);
       expect(find.byType(BottomNavigationBar), findsNothing);
     });
@@ -272,7 +281,7 @@ void main() {
 
       expect(find.text('내가 등록한 평점'), findsOneWidget);
       expect(find.text('영화 10'), findsOneWidget);
-      expect(find.text('5 / 5'), findsOneWidget);
+      expect(find.text('별점 5 / 5'), findsOneWidget);
       expect(find.text('등록한 평점이 없습니다.'), findsNothing);
       expect(find.text('null'), findsNothing);
       expect(find.byType(BottomNavigationBar), findsNothing);
@@ -308,10 +317,17 @@ void main() {
   ) async {
     final service = _FakeTmdbMovieService()
       ..detailCompleter = Completer<TmdbMovieDto?>();
+    final auth = _FakeAuthViewModel();
     await tester.pumpWidget(
-      Provider<TmdbMovieService>.value(
-        value: service,
-        child: const MaterialApp(home: MovieDetailScreen(movieId: 10)),
+      ChangeNotifierProvider<AuthViewModel>.value(
+        value: auth,
+        child: Provider<RatingApiService>.value(
+          value: _FakeRatingApiService(),
+          child: Provider<TmdbMovieService>.value(
+            value: service,
+            child: const MaterialApp(home: MovieDetailScreen(movieId: 10)),
+          ),
+        ),
       ),
     );
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -324,6 +340,7 @@ void main() {
     expect(find.textContaining('123분'), findsOneWidget);
     expect(find.text('드라마'), findsOneWidget);
     expect(find.text('평점 남기기'), findsOneWidget);
+    auth.dispose();
   });
 }
 
@@ -363,7 +380,7 @@ class _FakeSignUpService extends SignUpService {
 }
 
 class _FakeRatingApiService extends RatingApiService {
-  _FakeRatingApiService() : super(Dio());
+  _FakeRatingApiService() : super(Dio(), Dio());
 
   List<RatingDto> response = [];
   Completer<List<RatingDto>>? completer;
@@ -375,15 +392,54 @@ class _FakeRatingApiService extends RatingApiService {
   Future<List<RatingDto>> fetchMyRatings(int memberId) async {
     requestedMemberId = memberId;
     if (fail) {
-      final request = RequestOptions(path: '/v5/members/$memberId/ratings');
+      final request = RequestOptions(path: '/v7/members/$memberId/ratings');
       throw DioException(
         requestOptions: request,
         response: failureStatusCode == null
             ? null
-            : Response(requestOptions: request, statusCode: failureStatusCode),
+            : Response(
+                requestOptions: request,
+                statusCode: failureStatusCode,
+                data: {
+                  'code': failureStatusCode == 404 ? 'MEMBER404_1' : 'COMMON400',
+                  'message': failureStatusCode == 404
+                      ? '해당 회원을 찾을 수 없습니다.'
+                      : '평점 요청이 올바르지 않습니다.',
+                },
+              ),
       );
     }
     return completer?.future ?? response;
+  }
+}
+
+class _FakeAuthViewModel extends AuthViewModel {
+  _FakeAuthViewModel() : super(_FakeAuthApiService(), _FakeTokenStorage()) {
+    status = AuthStatus.signedIn;
+    member = MemberInfo(
+      memberId: 1,
+      email: 'test@example.com',
+      nickname: '테스터',
+      createdAt: DateTime.utc(2026, 1, 1),
+    );
+  }
+}
+
+class _FakeAuthApiService extends AuthApiService {
+  _FakeAuthApiService() : super(Dio(), Dio());
+}
+
+class _FakeTokenStorage implements TokenStorage {
+  String? token;
+  @override
+  Future<String?> read() async => token;
+  @override
+  Future<void> write(String value) async {
+    token = value;
+  }
+  @override
+  Future<void> delete() async {
+    token = null;
   }
 }
 

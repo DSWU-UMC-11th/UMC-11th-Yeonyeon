@@ -5,9 +5,9 @@ import '../data/models/tmdb_movie_dto.dart';
 import '../data/services/rating_api_service.dart';
 import '../data/services/tmdb_movie_service.dart';
 import '../theme/app_colors.dart';
-import '../view_models/learning_member_session.dart';
 import '../view_models/movie_detail_view_model.dart';
 import '../view_models/signup_view_model.dart';
+import '../view_models/auth_view_model.dart';
 import '../widgets/movie/rating_dialog.dart';
 import '../widgets/tmdb_poster_image.dart';
 
@@ -45,7 +45,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       return ChangeNotifierProvider<MovieDetailViewModel>(
         create: (context) => MovieDetailViewModel(
           context.read<RatingApiService>(),
-          context.read<LearningMemberSession>().memberId,
+          context.read<AuthViewModel>(),
           movie,
         ),
         child: _MovieDetailContent(movie: movie),
@@ -66,8 +66,10 @@ class _MovieDetailContentState extends State<_MovieDetailContent> {
 
   Future<void> _openRatingDialog() async {
     final vm = context.read<MovieDetailViewModel>();
-    if (vm.memberId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('평점을 등록하려면 먼저 회원가입해 주세요.')));
+    if (vm.auth.status != AuthStatus.signedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('평점을 등록하려면 먼저 로그인해 주세요.')),
+      );
       return;
     }
     final saved = await showDialog<bool>(
@@ -95,10 +97,23 @@ class _MovieDetailContentState extends State<_MovieDetailContent> {
     final genres = movie.genreNames.isNotEmpty ? movie.genreNames : movie.genreIds.map((id) => '장르 $id').toList();
     return Scaffold(
       backgroundColor: AppColors.warmWhite,
-      appBar: AppBar(backgroundColor: AppColors.warmWhite, foregroundColor: AppColors.violet, title: const Text('영화 상세 정보')),
+      appBar: AppBar(
+        backgroundColor: AppColors.warmWhite,
+        foregroundColor: AppColors.violet,
+        centerTitle: false,
+        title: const Text(
+          'MovieLog',
+          style: TextStyle(color: AppColors.black, fontSize: 24, fontWeight: FontWeight.w700),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
+          Text(
+            '영화 상세',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 18),
           ClipRRect(borderRadius: BorderRadius.circular(16), child: TmdbPosterImage(posterPath: movie.backdropPath ?? movie.posterPath, width: double.infinity, height: 300)),
           const SizedBox(height: 20),
           Text(movie.title, style: Theme.of(context).textTheme.headlineSmall),

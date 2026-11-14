@@ -18,17 +18,23 @@ import 'package:movielog/view_models/my_ratings_view_model.dart';
 import 'package:movielog/screens/my_ratings_screen.dart';
 import 'package:movielog/view_models/learning_member_session.dart';
 import 'package:movielog/data/models/tmdb_movie_dto.dart';
+import 'package:movielog/screens/login_screen.dart';
+import 'package:movielog/screens/profile_edit_screen.dart';
+import 'package:movielog/view_models/auth_view_model.dart';
 
 class AppRouter {
   AppRouter._();
 
   static final rootNavigatorKey = GlobalKey<NavigatorState>();
 
-  static final router = GoRouter(
+  static GoRouter create(AuthViewModel auth) => GoRouter(
     initialLocation: '/start',
     navigatorKey: rootNavigatorKey,
+    refreshListenable: auth,
+    redirect: (context, state) => authRedirect(auth.status, state.uri.path),
     routes: [
       GoRoute(path: '/start', builder: (context, state) => const StartScreen()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/register',
         builder: (context, state) => ChangeNotifierProvider(
@@ -36,15 +42,6 @@ class AppRouter {
               SignUpViewModel(context.read<SignUpService>()),
           child: const SignUpScreen(),
         ),
-      ),
-      GoRoute(
-        path: '/movies/:movieId',
-        builder: (context, state) {
-          final id = int.tryParse(state.pathParameters['movieId'] ?? '');
-          if (id == null || id < 1) return const Scaffold(body: Center(child: Text('영화 ID가 올바르지 않습니다.')));
-          final extra = state.extra;
-          return MovieDetailScreen(movieId: id, initialMovie: extra is TmdbMovieDto && extra.id == id ? extra : null);
-        },
       ),
       ShellRoute(
         builder: (context, state, child) {
@@ -73,17 +70,36 @@ class AppRouter {
             ),
           ),
           GoRoute(
+            path: '/movies/:movieId',
+            builder: (context, state) {
+              final id = int.tryParse(state.pathParameters['movieId'] ?? '');
+              if (id == null || id < 1) {
+                return const Scaffold(
+                  body: Center(child: Text('영화 ID가 올바르지 않습니다.')),
+                );
+              }
+              final extra = state.extra;
+              return MovieDetailScreen(
+                movieId: id,
+                initialMovie: extra is TmdbMovieDto && extra.id == id
+                    ? extra
+                    : null,
+              );
+            },
+          ),
+          GoRoute(
             path: '/my',
             builder: (context, state) => const Profile(),
             routes: [
+              GoRoute(path: 'profile/edit', parentNavigatorKey: rootNavigatorKey, builder: (context, state) => const ProfileEditScreen()),
               GoRoute(
                 path: 'ratings',
                 parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) {
-                  final memberId = context.read<LearningMemberSession>().memberId;
+                  final memberId = context.read<AuthViewModel>().member?.memberId;
                   if (memberId == null) return const _NeedsSignupScreen();
                   return ChangeNotifierProvider(
-                    create: (context) => MyRatingsViewModel(context.read<RatingApiService>(), context.read<TmdbMovieService>(), memberId)..load(),
+                    create: (context) => MyRatingsViewModel(context.read<RatingApiService>(), context.read<TmdbMovieService>(), context.read<AuthViewModel>(), memberId)..load(),
                     child: const MyRatingsScreen(),
                   );
                 },
@@ -94,6 +110,17 @@ class AppRouter {
       ),
     ],
   );
+
+  static String? authRedirect(AuthStatus status, String location) {
+    const publicPaths = {'/login', '/register'};
+    final atStart = location == '/start';
+    final atPublic = publicPaths.contains(location);
+    return switch (status) {
+      AuthStatus.initializing || AuthStatus.retryRequired => atStart ? null : '/start',
+      AuthStatus.signedOut || AuthStatus.authenticating => atPublic ? null : '/login',
+      AuthStatus.signedIn => (atStart || atPublic) ? '/home' : null,
+    };
+  }
 
   static int indexFromLocation(String path) {
     if (path.startsWith('/movies')) return 1;

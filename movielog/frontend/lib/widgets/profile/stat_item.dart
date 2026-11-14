@@ -12,11 +12,10 @@ class StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      width: 114,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       height: 86,
       decoration: BoxDecoration(
-        color: AppColors.lavender,
+        color: AppColors.warmWhite,
         border: Border.all(color: AppColors.lavender),
         borderRadius: BorderRadius.circular(12),
       ),

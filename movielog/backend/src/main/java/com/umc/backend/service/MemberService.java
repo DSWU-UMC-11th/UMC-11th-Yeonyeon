@@ -10,6 +10,10 @@ import com.umc.backend.dto.MemberResponse;
 import com.umc.backend.dto.SignUpRequest;
 import com.umc.backend.entity.Member;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.umc.backend.dto.MemberInfoResponse;
+import com.umc.backend.dto.MemberUpdateRequest;
+import com.umc.backend.exception.ApiException;
+import org.springframework.http.HttpStatus;
 @Service
 @RequiredArgsConstructor
 public class MemberService {
@@ -33,7 +37,7 @@ public class MemberService {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
         if (memberRepository.existsByNickname(request.nickname())) {
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            throw new ApiException(HttpStatus.CONFLICT, "MEMBER409_1", "이미 사용 중인 닉네임입니다.");
         }
 
         Member member = Member.builder()
@@ -44,5 +48,25 @@ public class MemberService {
 
         Member savedMember = memberRepository.save(member);
         return new MemberResponse(savedMember.getMemberId(), savedMember.getEmail(), savedMember.getNickname());
+    }
+
+    @Transactional(readOnly = true)
+    public MemberInfoResponse getMyInfo(Long memberId) {
+        return MemberInfoResponse.from(findMember(memberId));
+    }
+
+    @Transactional
+    public MemberInfoResponse updateMyInfo(Long memberId, MemberUpdateRequest request) {
+        Member member = findMember(memberId);
+        if (memberRepository.existsByNicknameAndMemberIdNot(request.nickname(), memberId)) {
+            throw new ApiException(HttpStatus.CONFLICT, "MEMBER409_1", "이미 사용 중인 닉네임입니다.");
+        }
+        member.updateNickname(request.nickname());
+        return MemberInfoResponse.from(memberRepository.save(member));
+    }
+
+    private Member findMember(Long memberId) {
+        return memberRepository.findById(memberId).orElseThrow(() ->
+                new ApiException(HttpStatus.NOT_FOUND, "MEMBER404_1", "해당 회원을 찾을 수 없습니다."));
     }
 }
