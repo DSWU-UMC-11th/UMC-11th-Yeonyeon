@@ -19,12 +19,12 @@ public class RatingController {
     private final RatingService ratingService;
 
     // 특정 회원의 평점 목록은 공개 API로 유지합니다.
-    @GetMapping("/members/{memberId}/ratings")
+    @GetMapping({"/members/{memberId}/ratings", "/v7/members/{memberId}/ratings"})
     public ApiResponse<List<RatingResponse>> getMemberRatings(@PathVariable Long memberId) {
         return ApiResponse.ok("평점 조회에 성공했습니다.", ratingService.getRatingsByMember(memberId));
     }
 
-    @PostMapping("/ratings")
+    @PostMapping({"/ratings", "/v7/ratings"})
     public ResponseEntity<ApiResponse<RatingResponse>> create(
             @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
             @Valid @RequestBody CreateRatingRequest request) {
@@ -32,7 +32,7 @@ public class RatingController {
                 ratingService.create(memberId, request)));
     }
 
-    @PatchMapping("/ratings/{ratingId}")
+    @PatchMapping({"/ratings/{ratingId}", "/v7/ratings/{ratingId}"})
     public ResponseEntity<ApiResponse<RatingResponse>> update(
             @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
             @PathVariable Long ratingId,
@@ -41,7 +41,7 @@ public class RatingController {
                 ratingService.update(memberId, ratingId, request)));
     }
 
-    @DeleteMapping("/ratings/{ratingId}")
+    @DeleteMapping({"/ratings/{ratingId}", "/v7/ratings/{ratingId}"})
     public ResponseEntity<ApiResponse<Void>> delete(
             @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
             @PathVariable Long ratingId) {
