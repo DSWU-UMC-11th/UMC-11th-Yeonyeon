@@ -128,7 +128,7 @@ class _FeaturedMovieCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => context.push('/movies/${movie.id}'),
+    onTap: () => context.push('/movies/${movie.id}', extra: movie),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: SizedBox(

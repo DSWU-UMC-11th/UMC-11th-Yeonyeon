@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../view_models/auth_view_model.dart';
 
 class StartScreen extends StatelessWidget {
   const StartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthViewModel>();
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
@@ -42,16 +45,21 @@ class StartScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(
+              if (auth.status == AuthStatus.retryRequired) ...[
+                Text(auth.message ?? '로그인 상태를 확인하지 못했어요.'),
+                SizedBox(width: double.infinity, child: ElevatedButton(onPressed: auth.restoreSession, child: const Text('다시 시도'))),
+              ] else if (auth.status == AuthStatus.initializing) ...[
+                const CircularProgressIndicator(),
+              ] else SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => context.go('/register'),
+                  onPressed: () => context.go('/login'),
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(0, 48),
                     backgroundColor: colors.primary,
                     foregroundColor: colors.onPrimary,
                   ),
-                  child: const Text('시작하기'),
+                  child: const Text('로그인'),
                 ),
               ),
             ],

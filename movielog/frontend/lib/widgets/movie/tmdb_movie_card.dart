@@ -9,15 +9,20 @@ class TmdbMovieCard extends StatelessWidget {
     super.key,
     required this.movie,
     this.showPopularity = false,
+    this.onReturn,
   });
 
   final TmdbMovieDto movie;
   final bool showPopularity;
+  final VoidCallback? onReturn;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
     behavior: HitTestBehavior.opaque,
-    onTap: () => context.push('/movies/${movie.id}'),
+    onTap: () async {
+      await context.push('/movies/${movie.id}', extra: movie);
+      onReturn?.call();
+    },
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
