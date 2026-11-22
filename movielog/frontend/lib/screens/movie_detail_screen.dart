@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../data/models/tmdb_movie_dto.dart';
 import '../data/services/rating_api_service.dart';
 import '../data/services/tmdb_movie_service.dart';
+import '../data/services/favorite_api_service.dart';
+import '../core/session_guard.dart';
+import '../view_models/favorite_detail_view_model.dart';
+import '../widgets/movie/favorite_button.dart';
 import '../theme/app_colors.dart';
 import '../view_models/movie_detail_view_model.dart';
 import '../view_models/signup_view_model.dart';
@@ -12,7 +16,11 @@ import '../widgets/movie/rating_dialog.dart';
 import '../widgets/tmdb_poster_image.dart';
 
 class MovieDetailScreen extends StatefulWidget {
-  const MovieDetailScreen({super.key, required this.movieId, this.initialMovie});
+  const MovieDetailScreen({
+    super.key,
+    required this.movieId,
+    this.initialMovie,
+  });
   final int movieId;
   final TmdbMovieDto? initialMovie;
 
@@ -26,7 +34,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _movieFuture = widget.initialMovie != null && widget.initialMovie!.id == widget.movieId
+    _movieFuture =
+        widget.initialMovie != null && widget.initialMovie!.id == widget.movieId
         ? Future.value(widget.initialMovie)
         : context.read<TmdbMovieService>().findMovieById(widget.movieId);
   }
@@ -48,7 +57,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           context.read<AuthViewModel>(),
           movie,
         ),
-        child: _MovieDetailContent(movie: movie),
+        child: ChangeNotifierProvider<FavoriteDetailViewModel>(
+          key: ValueKey(
+            '${context.read<AuthViewModel>().sessionVersion}:${movie.id}',
+          ),
+          create: (context) => FavoriteDetailViewModel(
+            context.read<FavoriteApi>(),
+            SessionGuard(context.read<AuthViewModel>()),
+            movie.id,
+          )..load(),
+          child: _MovieDetailContent(movie: movie),
+        ),
       );
     },
   );
@@ -62,14 +81,12 @@ class _MovieDetailContent extends StatefulWidget {
 }
 
 class _MovieDetailContentState extends State<_MovieDetailContent> {
-  bool _isFavorite = false;
-
   Future<void> _openRatingDialog() async {
     final vm = context.read<MovieDetailViewModel>();
     if (vm.auth.status != AuthStatus.signedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('평점을 등록하려면 먼저 로그인해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('평점을 등록하려면 먼저 로그인해 주세요.')));
       return;
     }
     final saved = await showDialog<bool>(
@@ -86,7 +103,9 @@ class _MovieDetailContentState extends State<_MovieDetailContent> {
     );
     if (!mounted || saved != true) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('평점을 등록했습니다. 마이페이지의 "내가 등록한 평점"에서 확인할 수 있습니다.')),
+      const SnackBar(
+        content: Text('평점을 등록했습니다. 마이페이지의 "내가 등록한 평점"에서 확인할 수 있습니다.'),
+      ),
     );
   }
 
@@ -94,7 +113,9 @@ class _MovieDetailContentState extends State<_MovieDetailContent> {
   Widget build(BuildContext context) {
     final movie = widget.movie;
     final year = movie.releaseDate?.split('-').first;
-    final genres = movie.genreNames.isNotEmpty ? movie.genreNames : movie.genreIds.map((id) => '장르 $id').toList();
+    final genres = movie.genreNames.isNotEmpty
+        ? movie.genreNames
+        : movie.genreIds.map((id) => '장르 $id').toList();
     return Scaffold(
       backgroundColor: AppColors.warmWhite,
       appBar: AppBar(
@@ -103,7 +124,11 @@ class _MovieDetailContentState extends State<_MovieDetailContent> {
         centerTitle: false,
         title: const Text(
           'MovieLog',
-          style: TextStyle(color: AppColors.black, fontSize: 24, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: AppColors.black,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       body: ListView(
@@ -111,17 +136,47 @@ class _MovieDetailContentState extends State<_MovieDetailContent> {
         children: [
           Text(
             '영화 상세',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 18),
-          ClipRRect(borderRadius: BorderRadius.circular(16), child: TmdbPosterImage(posterPath: movie.backdropPath ?? movie.posterPath, width: double.infinity, height: 300)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: TmdbPosterImage(
+              posterPath: movie.backdropPath ?? movie.posterPath,
+              width: double.infinity,
+              height: 300,
+            ),
+          ),
           const SizedBox(height: 20),
-          Text(movie.title, style: Theme.of(context).textTheme.headlineSmall),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  movie.title,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ),
+              const FavoriteButton(),
+            ],
+          ),
           const SizedBox(height: 8),
-          Text([if (year != null && year.isNotEmpty) year, if (movie.runtimeMinutes != null) '${movie.runtimeMinutes}분'].join(' · ')),
+          Text(
+            [
+              if (year != null && year.isNotEmpty) year,
+              if (movie.runtimeMinutes != null) '${movie.runtimeMinutes}분',
+            ].join(' · '),
+          ),
           const SizedBox(height: 10),
           Text('★ ${movie.voteAverage.toStringAsFixed(1)} / 10'),
-          if (genres.isNotEmpty) ...[const SizedBox(height: 12), Wrap(spacing: 8, runSpacing: 8, children: genres.map((name) => Chip(label: Text(name))).toList())],
+          if (genres.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: genres.map((name) => Chip(label: Text(name))).toList(),
+            ),
+          ],
           const SizedBox(height: 24),
           Text('줄거리', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
@@ -132,11 +187,17 @@ class _MovieDetailContentState extends State<_MovieDetailContent> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-          child: Row(children: [
-            Expanded(child: OutlinedButton.icon(onPressed: () { setState(() => _isFavorite = !_isFavorite); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_isFavorite ? '즐겨찾기에 추가했습니다.' : '즐겨찾기에서 삭제했습니다.'))); }, icon: Icon(_isFavorite ? Icons.bookmark : Icons.bookmark_border), label: Text(_isFavorite ? '즐겨찾기 완료' : '즐겨찾기'))),
-            const SizedBox(width: 8),
-            Expanded(child: FilledButton.icon(onPressed: _openRatingDialog, icon: const Icon(Icons.rate_review_outlined), label: const Text('평점 남기기'))),
-          ]),
+          child: Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _openRatingDialog,
+                  icon: const Icon(Icons.rate_review_outlined),
+                  label: const Text('평점 남기기'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

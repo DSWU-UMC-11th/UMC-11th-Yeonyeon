@@ -54,6 +54,25 @@ class TmdbMovieService {
     return TmdbMoviePageDto.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<TmdbMoviePageDto> searchMovies({
+    required String query,
+    required int page,
+  }) async {
+    final response = await _dio.get(
+      '/search/movie',
+      queryParameters: {
+        'language': 'ko-KR',
+        'query': query,
+        'page': page,
+        'include_adult': false,
+      },
+    );
+    return TmdbMoviePageDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<TmdbMovieDto?> fetchMovieDetails(int movieId) =>
+      findMovieById(movieId);
+
   Future<List<TmdbGenreDto>> fetchGenres() async {
     final response = await _dio.get(
       '/genre/movie/list',

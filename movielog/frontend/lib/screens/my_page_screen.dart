@@ -60,11 +60,17 @@ class Profile extends StatelessWidget {
           const SizedBox(height: 32),
           const Row(
             children: [
-              Expanded(child: StatItem(label: '본 영화', value: '342')),
+              Expanded(
+                child: StatItem(label: '본 영화', value: '342'),
+              ),
               SizedBox(width: 8),
-              Expanded(child: StatItem(label: '평점', value: '4.2')),
+              Expanded(
+                child: StatItem(label: '평점', value: '4.2'),
+              ),
               SizedBox(width: 8),
-              Expanded(child: StatItem(label: '즐겨찾기', value: '58')),
+              Expanded(
+                child: StatItem(label: '즐겨찾기', value: '58'),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -78,7 +84,10 @@ class Profile extends StatelessWidget {
                 height: 66,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.ratingEntryBorder, width: 1.5),
+                  border: Border.all(
+                    color: AppColors.ratingEntryBorder,
+                    width: 1.5,
+                  ),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Row(
@@ -89,7 +98,46 @@ class Profile extends StatelessWidget {
                         style: TextStyle(color: AppColors.black, fontSize: 16),
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: AppColors.violet, size: 30),
+                    Icon(
+                      Icons.chevron_right,
+                      color: AppColors.violet,
+                      size: 30,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Material(
+            color: AppColors.warmWhite,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => context.push('/my/favorites'),
+              child: Container(
+                height: 66,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: AppColors.ratingEntryBorder,
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '내 즐겨찾기',
+                        style: TextStyle(color: AppColors.black, fontSize: 16),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: AppColors.violet,
+                      size: 30,
+                    ),
                   ],
                 ),
               ),
@@ -98,7 +146,11 @@ class Profile extends StatelessWidget {
           const SizedBox(height: 24),
           const Text(
             '선호하는 장르',
-            style: TextStyle(color: AppColors.black, fontWeight: FontWeight.w600, fontSize: 15),
+            style: TextStyle(
+              color: AppColors.black,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
           ),
           const SizedBox(height: 8),
           const Wrap(

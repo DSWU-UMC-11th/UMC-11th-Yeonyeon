@@ -380,7 +380,7 @@ class _FakeSignUpService extends SignUpService {
 }
 
 class _FakeRatingApiService extends RatingApiService {
-  _FakeRatingApiService() : super(Dio(), Dio());
+  _FakeRatingApiService() : super(Dio());
 
   List<RatingDto> response = [];
   Completer<List<RatingDto>>? completer;
@@ -401,7 +401,9 @@ class _FakeRatingApiService extends RatingApiService {
                 requestOptions: request,
                 statusCode: failureStatusCode,
                 data: {
-                  'code': failureStatusCode == 404 ? 'MEMBER404_1' : 'COMMON400',
+                  'code': failureStatusCode == 404
+                      ? 'MEMBER404_1'
+                      : 'COMMON400',
                   'message': failureStatusCode == 404
                       ? '해당 회원을 찾을 수 없습니다.'
                       : '평점 요청이 올바르지 않습니다.',
@@ -437,6 +439,7 @@ class _FakeTokenStorage implements TokenStorage {
   Future<void> write(String value) async {
     token = value;
   }
+
   @override
   Future<void> delete() async {
     token = null;

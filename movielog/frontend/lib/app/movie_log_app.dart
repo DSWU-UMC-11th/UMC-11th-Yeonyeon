@@ -12,6 +12,7 @@ import '../view_models/auth_view_model.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../view_models/learning_member_session.dart';
+import '../data/services/favorite_api_service.dart';
 
 class MovieLogApp extends StatelessWidget {
   const MovieLogApp({super.key});
@@ -21,20 +22,24 @@ class MovieLogApp extends StatelessWidget {
     final storage = SecureTokenStorage();
     final publicClient = createMovieLogClient();
     final authClient = createAuthenticatedMovieLogClient(storage);
-    final auth = AuthViewModel(AuthApiService(publicClient, authClient), storage)..initialize();
+    final auth = AuthViewModel(
+      AuthApiService(publicClient, authClient),
+      storage,
+    )..initialize();
     return MultiProvider(
       providers: [
         Provider<TmdbMovieService>(
           create: (_) => TmdbMovieService(createTmdbClient()),
         ),
-        Provider<SignUpService>(
-          create: (_) => SignUpService(publicClient),
-        ),
+        Provider<SignUpService>(create: (_) => SignUpService(publicClient)),
         Provider<RatingApiService>(
-          create: (_) => RatingApiService(publicClient, authClient),
+          create: (_) => RatingApiService(authClient),
         ),
+        Provider<FavoriteApi>(create: (_) => FavoriteApiService(authClient)),
         ChangeNotifierProvider<AuthViewModel>.value(value: auth),
-        ChangeNotifierProvider<LearningMemberSession>(create: (_) => LearningMemberSession()),
+        ChangeNotifierProvider<LearningMemberSession>(
+          create: (_) => LearningMemberSession(),
+        ),
       ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,

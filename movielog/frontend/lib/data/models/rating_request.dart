@@ -1,6 +1,7 @@
 int validateServerScore(double value) {
-  if (value < 1 || value > 5 || value != value.roundToDouble())
+  if (value < 1 || value > 5 || value != value.roundToDouble()) {
     throw ArgumentError('서버 평점은 1~5 사이 정수여야 합니다.');
+  }
   return value.toInt();
 }
 

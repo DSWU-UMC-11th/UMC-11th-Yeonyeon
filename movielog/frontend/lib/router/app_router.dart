@@ -9,18 +9,22 @@ import 'package:movielog/screens/movie_detail_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:movielog/data/services/tmdb_movie_service.dart';
 import 'package:movielog/view_models/movie_home_view_model.dart';
-import 'package:movielog/view_models/movie_list_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:movielog/data/services/sign_up_service.dart';
 import 'package:movielog/data/services/rating_api_service.dart';
 import 'package:movielog/view_models/signup_view_model.dart';
 import 'package:movielog/view_models/my_ratings_view_model.dart';
 import 'package:movielog/screens/my_ratings_screen.dart';
-import 'package:movielog/view_models/learning_member_session.dart';
 import 'package:movielog/data/models/tmdb_movie_dto.dart';
 import 'package:movielog/screens/login_screen.dart';
 import 'package:movielog/screens/profile_edit_screen.dart';
 import 'package:movielog/view_models/auth_view_model.dart';
+import 'package:movielog/data/services/favorite_api_service.dart';
+import 'package:movielog/core/session_guard.dart';
+import 'package:movielog/view_models/favorites_view_model.dart';
+import 'package:movielog/screens/favorites_screen.dart';
+import 'package:movielog/view_models/paged_movies_view_model.dart';
+import 'package:movielog/screens/movie_search_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -38,8 +42,7 @@ class AppRouter {
       GoRoute(
         path: '/register',
         builder: (context, state) => ChangeNotifierProvider(
-          create: (context) =>
-              SignUpViewModel(context.read<SignUpService>()),
+          create: (context) => SignUpViewModel(context.read<SignUpService>()),
           child: const SignUpScreen(),
         ),
       ),
@@ -63,10 +66,37 @@ class AppRouter {
           GoRoute(
             path: '/movies',
             builder: (context, state) => ChangeNotifierProvider(
-              create: (context) =>
-                  MovieListViewModel(context.read<TmdbMovieService>())
-                    ..loadInitial(),
+              create: (context) {
+                final auth = context.read<AuthViewModel>();
+                final vm = PagedMoviesViewModel(
+                  context.read<TmdbMovieService>(),
+                  isSessionCurrent: (version) =>
+                      version == auth.sessionVersion &&
+                      auth.status == AuthStatus.signedIn,
+                );
+                vm.loadInitial(sessionVersion: auth.sessionVersion);
+                return vm;
+              },
               child: const MovieListScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/movies/search',
+            parentNavigatorKey: rootNavigatorKey,
+            builder: (context, state) => ChangeNotifierProvider(
+              key: ValueKey(
+                'search:${context.read<AuthViewModel>().sessionVersion}',
+              ),
+              create: (context) {
+                final auth = context.read<AuthViewModel>();
+                return PagedMoviesViewModel(
+                  context.read<TmdbMovieService>(),
+                  isSessionCurrent: (version) =>
+                      version == auth.sessionVersion &&
+                      auth.status == AuthStatus.signedIn,
+                );
+              },
+              child: const MovieSearchScreen(),
             ),
           ),
           GoRoute(
@@ -91,16 +121,46 @@ class AppRouter {
             path: '/my',
             builder: (context, state) => const Profile(),
             routes: [
-              GoRoute(path: 'profile/edit', parentNavigatorKey: rootNavigatorKey, builder: (context, state) => const ProfileEditScreen()),
+              GoRoute(
+                path: 'profile/edit',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) => const ProfileEditScreen(),
+              ),
               GoRoute(
                 path: 'ratings',
                 parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) {
-                  final memberId = context.read<AuthViewModel>().member?.memberId;
+                  final memberId = context
+                      .read<AuthViewModel>()
+                      .member
+                      ?.memberId;
                   if (memberId == null) return const _NeedsSignupScreen();
                   return ChangeNotifierProvider(
-                    create: (context) => MyRatingsViewModel(context.read<RatingApiService>(), context.read<TmdbMovieService>(), context.read<AuthViewModel>(), memberId)..load(),
+                    create: (context) => MyRatingsViewModel(
+                      context.read<RatingApiService>(),
+                      context.read<TmdbMovieService>(),
+                      context.read<AuthViewModel>(),
+                      memberId,
+                    )..load(),
                     child: const MyRatingsScreen(),
+                  );
+                },
+              ),
+              GoRoute(
+                path: 'favorites',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) {
+                  final vm = FavoritesViewModel(
+                    context.read<FavoriteApi>(),
+                    context.read<TmdbMovieService>(),
+                    SessionGuard(context.read<AuthViewModel>()),
+                  );
+                  return ChangeNotifierProvider(
+                    key: ValueKey(
+                      'favorites:${context.read<AuthViewModel>().sessionVersion}',
+                    ),
+                    create: (_) => vm,
+                    child: const FavoritesScreen(),
                   );
                 },
               ),
@@ -116,8 +176,10 @@ class AppRouter {
     final atStart = location == '/start';
     final atPublic = publicPaths.contains(location);
     return switch (status) {
-      AuthStatus.initializing || AuthStatus.retryRequired => atStart ? null : '/start',
-      AuthStatus.signedOut || AuthStatus.authenticating => atPublic ? null : '/login',
+      AuthStatus.initializing ||
+      AuthStatus.retryRequired => atStart ? null : '/start',
+      AuthStatus.signedOut ||
+      AuthStatus.authenticating => atPublic ? null : '/login',
       AuthStatus.signedIn => (atStart || atPublic) ? '/home' : null,
     };
   }
@@ -133,5 +195,19 @@ class AppRouter {
 class _NeedsSignupScreen extends StatelessWidget {
   const _NeedsSignupScreen();
   @override
-  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('내가 등록한 평점')), body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [const Text('학습용 회원가입이 필요합니다.'), TextButton(onPressed: () => context.go('/register'), child: const Text('회원가입'))])));
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('내가 등록한 평점')),
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('학습용 회원가입이 필요합니다.'),
+          TextButton(
+            onPressed: () => context.go('/register'),
+            child: const Text('회원가입'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
